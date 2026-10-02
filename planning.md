@@ -38,13 +38,13 @@ This document outlines the plan for improving the Marmite codebase based on the 
 ### 2.1. Refactoring
 
 - [ ] Refactor large functions into smaller, more focused units.
-  - [ ] `site.rs`: Break down `generate()` into smaller private functions (e.g., `setup_build`, `process_content`, `render_site`).
-  - [ ] `site.rs`: Refactor `collect_all_urls()` to improve readability.
+  - [x] `site.rs`: Break down `generate()` into smaller private functions (e.g., `setup_build`, `process_content`, `render_site`).
+  - [x] `site.rs`: Refactor `collect_all_urls()` to improve readability.
 
 ### 2.2. Performance Optimization
 
-- [ ] Optimize the `_collect_back_links` function in `site.rs`.
-  - [ ] Replace the O(n^2) nested loop with a more efficient `HashMap`-based approach.
+- [x] Optimize the `_collect_back_links` function in `site.rs`.
+  - [x] Replace the O(n^2) nested loop with a more efficient `HashMap`-based approach.
 
 ---
 

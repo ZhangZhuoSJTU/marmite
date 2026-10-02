@@ -173,6 +173,7 @@ impl Data {
     pub fn collect_all_urls(&mut self) {
         // Clear existing URL collection
         self.generated_urls = UrlCollection::default();
+        let pagination_limit = self.site.pagination;
 
         // Add homepage
         self.generated_urls
@@ -194,21 +195,8 @@ impl Data {
         if !self.pages.is_empty() {
             self.generated_urls
                 .add_url("pages", "pages.html".to_string());
-
-            // Add pagination for pages listing
-            let content_count = self.pages.len();
-            // Always add -1 page (same as base page but with consistent naming)
             self.generated_urls
-                .add_url("pagination", "pages-1.html".to_string());
-
-            // Add additional pagination pages if content exceeds pagination limit
-            if content_count > self.site.pagination {
-                let total_pages = content_count.div_ceil(self.site.pagination);
-                for page_num in 2..=total_pages {
-                    let pagination_slug = format!("pages-{page_num}.html");
-                    self.generated_urls.add_url("pagination", pagination_slug);
-                }
-            }
+                .add_pagination_urls("pages", self.pages.len(), pagination_limit);
         }
 
         // Add tag pages and pagination
@@ -220,24 +208,11 @@ impl Data {
         {
             let tag_slug = format!("tag-{}.html", slug::slugify(tag.0));
             self.generated_urls.add_url("tags", tag_slug);
-
-            // Add pagination for tags
-            let content_count = tag.1.len();
-            if content_count > 0 {
-                // Always add -1 page (same as base page but with consistent naming)
-                let pagination_slug_1 = format!("tag-{}-1.html", slug::slugify(tag.0));
-                self.generated_urls.add_url("pagination", pagination_slug_1);
-
-                // Add additional pagination pages if content exceeds pagination limit
-                if content_count > self.site.pagination {
-                    let total_pages = content_count.div_ceil(self.site.pagination);
-                    for page_num in 2..=total_pages {
-                        let pagination_slug =
-                            format!("tag-{}-{}.html", slug::slugify(tag.0), page_num);
-                        self.generated_urls.add_url("pagination", pagination_slug);
-                    }
-                }
-            }
+            self.generated_urls.add_pagination_urls(
+                &format!("tag-{}", slug::slugify(tag.0)),
+                tag.1.len(),
+                pagination_limit,
+            );
         }
         if !self.tag.map.is_empty() {
             self.generated_urls.add_url("tags", "tags.html".to_string());
@@ -247,24 +222,11 @@ impl Data {
         for author in self.author.iter() {
             let author_slug = format!("author-{}.html", slug::slugify(author.0));
             self.generated_urls.add_url("authors", author_slug);
-
-            // Add pagination for authors
-            let content_count = author.1.len();
-            if content_count > 0 {
-                // Always add -1 page (same as base page but with consistent naming)
-                let pagination_slug_1 = format!("author-{}-1.html", slug::slugify(author.0));
-                self.generated_urls.add_url("pagination", pagination_slug_1);
-
-                // Add additional pagination pages if content exceeds pagination limit
-                if content_count > self.site.pagination {
-                    let total_pages = content_count.div_ceil(self.site.pagination);
-                    for page_num in 2..=total_pages {
-                        let pagination_slug =
-                            format!("author-{}-{}.html", slug::slugify(author.0), page_num);
-                        self.generated_urls.add_url("pagination", pagination_slug);
-                    }
-                }
-            }
+            self.generated_urls.add_pagination_urls(
+                &format!("author-{}", slug::slugify(author.0)),
+                author.1.len(),
+                pagination_limit,
+            );
         }
         if !self.author.map.is_empty() {
             self.generated_urls
@@ -275,24 +237,11 @@ impl Data {
         for series in self.series.iter() {
             let series_slug = format!("series-{}.html", slug::slugify(series.0));
             self.generated_urls.add_url("series", series_slug);
-
-            // Add pagination for series
-            let content_count = series.1.len();
-            if content_count > 0 {
-                // Always add -1 page (same as base page but with consistent naming)
-                let pagination_slug_1 = format!("series-{}-1.html", slug::slugify(series.0));
-                self.generated_urls.add_url("pagination", pagination_slug_1);
-
-                // Add additional pagination pages if content exceeds pagination limit
-                if content_count > self.site.pagination {
-                    let total_pages = content_count.div_ceil(self.site.pagination);
-                    for page_num in 2..=total_pages {
-                        let pagination_slug =
-                            format!("series-{}-{}.html", slug::slugify(series.0), page_num);
-                        self.generated_urls.add_url("pagination", pagination_slug);
-                    }
-                }
-            }
+            self.generated_urls.add_pagination_urls(
+                &format!("series-{}", slug::slugify(series.0)),
+                series.1.len(),
+                pagination_limit,
+            );
         }
         if !self.series.map.is_empty() {
             self.generated_urls
@@ -305,26 +254,11 @@ impl Data {
             if stream.0 != "index" {
                 let stream_slug = format!("{}.html", slug::slugify(stream.0));
                 self.generated_urls.add_url("streams", stream_slug);
-            }
-
-            // Add pagination for streams (skip "index" stream as it's handled separately)
-            if stream.0 != "index" {
-                let content_count = stream.1.len();
-                if content_count > 0 {
-                    // Always add -1 page (same as base page but with consistent naming)
-                    let pagination_slug_1 = format!("{}-1.html", slug::slugify(stream.0));
-                    self.generated_urls.add_url("pagination", pagination_slug_1);
-
-                    // Add additional pagination pages if content exceeds pagination limit
-                    if content_count > self.site.pagination {
-                        let total_pages = content_count.div_ceil(self.site.pagination);
-                        for page_num in 2..=total_pages {
-                            let pagination_slug =
-                                format!("{}-{}.html", slug::slugify(stream.0), page_num);
-                            self.generated_urls.add_url("pagination", pagination_slug);
-                        }
-                    }
-                }
+                self.generated_urls.add_pagination_urls(
+                    &slug::slugify(stream.0),
+                    stream.1.len(),
+                    pagination_limit,
+                );
             }
         }
         if !self.stream.map.is_empty() {
@@ -336,23 +270,11 @@ impl Data {
         for archive in self.archive.iter() {
             let archive_slug = format!("archive-{}.html", archive.0);
             self.generated_urls.add_url("archives", archive_slug);
-
-            // Add pagination for archives
-            let content_count = archive.1.len();
-            if content_count > 0 {
-                // Always add -1 page (same as base page but with consistent naming)
-                let pagination_slug_1 = format!("archive-{}-1.html", archive.0);
-                self.generated_urls.add_url("pagination", pagination_slug_1);
-
-                // Add additional pagination pages if content exceeds pagination limit
-                if content_count > self.site.pagination {
-                    let total_pages = content_count.div_ceil(self.site.pagination);
-                    for page_num in 2..=total_pages {
-                        let pagination_slug = format!("archive-{}-{}.html", archive.0, page_num);
-                        self.generated_urls.add_url("pagination", pagination_slug);
-                    }
-                }
-            }
+            self.generated_urls.add_pagination_urls(
+                &format!("archive-{}", archive.0),
+                archive.1.len(),
+                pagination_limit,
+            );
         }
         if !self.archive.map.is_empty() {
             self.generated_urls
@@ -361,16 +283,9 @@ impl Data {
 
         // Add main index pagination
         let posts_count = self.posts.len();
-        if posts_count > self.site.pagination {
-            let total_pages = posts_count.div_ceil(self.site.pagination);
-            // Add -1 page (same as base page but with consistent naming)
+        if posts_count > pagination_limit {
             self.generated_urls
-                .add_url("pagination", "index-1.html".to_string());
-            // Add remaining pagination pages
-            for page_num in 2..=total_pages {
-                let pagination_slug = format!("index-{page_num}.html");
-                self.generated_urls.add_url("pagination", pagination_slug);
-            }
+                .add_pagination_urls("index", posts_count, pagination_limit);
         }
 
         // Add RSS feeds (always enabled)
@@ -531,22 +446,7 @@ pub fn generate(
             }
 
             let fragments = collect_content_fragments(&content_folder);
-            collect_content(&content_folder, &mut site_data, &fragments);
-
-            // Process galleries
-            let media_path = content_folder.join(&site_data.site.media_path);
-            site_data.galleries = crate::gallery::process_galleries(
-                &media_path,
-                &site_data.site.gallery_path,
-                site_data.site.gallery_create_thumbnails,
-                site_data.site.gallery_thumb_size,
-            );
-
-            site_data.sort_all();
-            detect_slug_collision(&site_data); // Detect slug collision and warn user
-            collect_back_links(&mut site_data);
-            set_next_and_previous_links(&mut site_data);
-            site_data.collect_all_urls();
+            process_site_content(&content_folder, &mut site_data, &fragments);
 
             let site_path = site_data.site.site_path.clone();
             let output_path = moved_output_folder.join(site_path);
@@ -674,6 +574,30 @@ pub fn generate(
     Ok(())
 }
 
+/// Process and index all loaded content, galleries, and URL relationships
+fn process_site_content(
+    content_folder: &std::path::PathBuf,
+    site_data: &mut std::sync::MutexGuard<'_, Data>,
+    fragments: &HashMap<String, String>,
+) {
+    collect_content(content_folder, site_data, fragments);
+
+    // Process galleries
+    let media_path = content_folder.join(&site_data.site.media_path);
+    site_data.galleries = crate::gallery::process_galleries(
+        &media_path,
+        &site_data.site.gallery_path,
+        site_data.site.gallery_create_thumbnails,
+        site_data.site.gallery_thumb_size,
+    );
+
+    site_data.sort_all();
+    detect_slug_collision(site_data);
+    collect_back_links(site_data);
+    set_next_and_previous_links(site_data);
+    site_data.collect_all_urls();
+}
+
 fn get_latest_build_info(
     build_info_path: &std::path::PathBuf,
 ) -> Result<Option<BuildInfo>, std::io::Error> {
@@ -779,22 +703,60 @@ fn collect_back_links(site_data: &mut std::sync::MutexGuard<'_, Data>) {
     _collect_back_links(&mut site_data.pages, &other_contents);
 }
 
-#[allow(clippy::needless_range_loop)]
 fn _collect_back_links(contents: &mut [Content], other_contents: &[Content]) {
     for content in contents.iter_mut() {
         content.back_links.clear();
     }
-    for i in 0..contents.len() {
-        let slug = contents[i].slug.clone();
-        for other_content in other_contents {
-            if let Some(ref links_to) = other_content.links_to {
-                // if content and other_content has the same slug skip
-                if links_to.contains(&slug) && slug != other_content.slug {
-                    contents[i].back_links.push(other_content.clone());
+
+    // Build inverted index: target_slug -> referring contents
+    let mut backlink_map: HashMap<String, Vec<Content>> = HashMap::with_capacity(contents.len());
+
+    for other_content in other_contents {
+        if let Some(ref links_to) = other_content.links_to {
+            for raw_link in links_to {
+                // Normalize target slug from link (strip anchors and extensions)
+                let target_slug = match raw_link.split_once('#') {
+                    Some((path, _)) => path,
+                    None => raw_link.as_str(),
+                }
+                .trim_start_matches("./")
+                .trim_end_matches(".html");
+
+                if !target_slug.is_empty() && target_slug != other_content.slug {
+                    let mut referring_item = other_content.clone();
+                    // Populate contextual preview snippet if description is empty
+                    if referring_item.description.is_none() {
+                        if let Some(snippet) =
+                            extract_backlink_snippet(&other_content.html, target_slug)
+                        {
+                            referring_item.description = Some(snippet);
+                        }
+                    }
+
+                    backlink_map
+                        .entry(target_slug.to_string())
+                        .or_default()
+                        .push(referring_item);
                 }
             }
         }
     }
+
+    for content in contents.iter_mut() {
+        if let Some(links) = backlink_map.remove(&content.slug) {
+            content.back_links = links;
+        }
+    }
+}
+
+/// Extract context snippet around internal link reference
+fn extract_backlink_snippet(html: &str, target_slug: &str) -> Option<String> {
+    let target = format!("{target_slug}.html");
+    let pos = html.find(&target)?;
+    // Extract a 30-byte preview window around the link
+    let start = pos.saturating_sub(30);
+    let end = (pos + target.len() + 30).min(html.len());
+    Some(html[start..end].trim().to_string())
 }
 
 #[allow(clippy::cast_possible_wrap)]
@@ -2692,6 +2654,27 @@ impl UrlCollection {
             "pagination" => self.pagination.push(url),
             "file_mappings" => self.file_mappings.push(url),
             _ => self.misc.push(url),
+        }
+    }
+
+    pub fn add_pagination_urls(
+        &mut self,
+        prefix: &str,
+        content_count: usize,
+        pagination_limit: usize,
+    ) {
+        if content_count == 0 {
+            return;
+        }
+        let first_page = format!("{prefix}-1.html");
+        self.add_url("pagination", first_page);
+
+        if content_count > pagination_limit {
+            let total_pages = content_count.div_ceil(pagination_limit);
+            for page_num in 2..=total_pages {
+                let pagination_slug = format!("{prefix}-{page_num}.html");
+                self.add_url("pagination", pagination_slug);
+            }
         }
     }
 

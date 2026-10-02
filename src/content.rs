@@ -227,6 +227,20 @@ impl Content {
         };
         Ok(content)
     }
+
+    /// Check whether this content item has any referring backlinks
+    #[must_use]
+    #[allow(dead_code)]
+    pub fn has_backlinks(&self) -> bool {
+        !self.back_links.is_empty()
+    }
+
+    /// Returns the number of backlinks pointing to this content
+    #[must_use]
+    #[allow(dead_code)]
+    pub fn backlink_count(&self) -> usize {
+        self.back_links.len()
+    }
 }
 
 #[allow(clippy::module_name_repetitions)]
